@@ -109,6 +109,12 @@ class Agent
                 )
             ),
 
+            'search_code' => json_encode(
+                $this->tool->searchCode(
+                    $arguments['search']
+                )
+            ),
+
             default => throw new RuntimeException(
                 'Unknown tool: ' . $toolCall['name']
             ),
