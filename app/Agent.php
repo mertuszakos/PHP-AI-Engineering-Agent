@@ -10,6 +10,11 @@ class Agent
 
     private $payload;
 
+    private int $apiCalls = 0;
+    private int $inputTokens = 0;
+    private int $outputTokens = 0;
+    private int $reasoningTokens = 0;
+
     public function run(string $task): string
     {
         $this->createInitialPayload($task);
@@ -17,9 +22,13 @@ class Agent
         while (true) {
             $response = $this->client->createResponse($this->payload);
 
+            $this->collectUsage($response);
+
             $finalText = $this->findFinalText($response);
 
             if ($finalText !== null) {
+                $this->printMetrics();
+
                 return $finalText;
             }
 
@@ -134,5 +143,25 @@ class Agent
             'previous_response_id' => $responseId,
             'input' => $toolOutputs,
         ];
+    }
+
+    private function collectUsage(array $response): void
+    {
+        $this->apiCalls++;
+        $this->inputTokens += $response["usage"]["input_tokens"] ?? 0;
+        $this->outputTokens += $response["usage"]["output_tokens"] ?? 0;
+        $this->reasoningTokens += $response["usage"]["output_tokens_details"]["reasoning_tokens"] ?? 0;
+    }
+
+    private function printMetrics(): void
+    {
+        $totalTokens = $this->inputTokens + $this->outputTokens;
+
+        echo "--- Run metrics ---\n";
+        echo "API calls: {$this->apiCalls}\n";
+        echo "Input tokens: {$this->inputTokens}\n";
+        echo "Output tokens: {$this->outputTokens}\n";
+        echo "Reasoning tokens: {$this->reasoningTokens}\n";
+        echo "Total tokens: {$totalTokens}\n";
     }
 }
