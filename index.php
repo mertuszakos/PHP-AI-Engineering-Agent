@@ -9,15 +9,31 @@ if (!$apiKey) {
 require_once __DIR__ . '/app/OpenAIClient.php';
 require_once __DIR__ . '/app/Tool.php';
 require_once __DIR__ . '/app/Agent.php';
+require_once __DIR__ . '/app/RunResult.php';
 
 $client = new OpenAIClient($apiKey);
 $tool = new Tool();
 $agent = new Agent($client, $tool);
 
 $result = $agent->run(
-    'Nézd meg, milyen PHP fájlok vannak a workspace könyvtárban. '
-    . 'Keresd meg, melyik fájl tartalmazza a getUserName függvényt, '
-    . 'majd készíts egy két mondatos code review-t erről a függvényről.'
+    'Review the uncommitted changes in the workspace project. '
+    . 'Identify potential bugs, security issues, and code quality problems. '
+    . 'Keep the review concise.'
 );
 
-echo $result . PHP_EOL;
+echo "Tool calls:\n";
+
+foreach ($result->toolCalls as $tool) {
+    $arguments = json_encode($tool["arguments"]);
+    echo "- {$tool["name"]} {$arguments}\n";
+}
+
+echo "--- Run metrics ---\n";
+echo "API calls: {$result->apiCalls}\n";
+echo "Input tokens: {$result->inputTokens}\n";
+echo "Output tokens: {$result->outputTokens}\n";
+echo "Reasoning tokens: {$result->reasoningTokens}\n";
+echo "Total tokens: {$result->getTotalTokens()}\n";
+
+echo "--- Result: ---\n";
+echo $result->answer;

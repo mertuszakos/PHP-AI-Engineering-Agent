@@ -61,6 +61,15 @@ class Tool
             ],
             'strict' => true,
         ],
+        [
+            'type' => 'function',
+            'name' => 'git_diff',
+            'description' => 'Get the current Git diff of the mounted project workspace.',
+            'parameters' => [
+                'type' => 'object',
+                'additionalProperties' => false,
+            ],
+        ],
     ];
 
     public function readFile(string $path): string
@@ -139,5 +148,9 @@ class Tool
         }
 
         return $resolved;
+    }
+    public function gitDiff(): string
+    {
+        return shell_exec('git -C /var/www/workspace diff');
     }
 }

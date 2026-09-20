@@ -15,21 +15,31 @@ class Agent
     private int $outputTokens = 0;
     private int $reasoningTokens = 0;
 
-    public function run(string $task): string
+    public array $toolCalls = [];
+
+    public function run(string $task): RunResult
     {
         $this->createInitialPayload($task);
 
         while (true) {
             $response = $this->client->createResponse($this->payload);
 
-            $this->collectUsage($response);
+            $this->apiCalls++;
+            $this->inputTokens += $response["usage"]["input_tokens"] ?? 0;
+            $this->outputTokens += $response["usage"]["output_tokens"] ?? 0;
+            $this->reasoningTokens += $response["usage"]["output_tokens_details"]["reasoning_tokens"] ?? 0;
 
             $finalText = $this->findFinalText($response);
 
             if ($finalText !== null) {
-                $this->printMetrics();
-
-                return $finalText;
+                return new RunResult(
+                    $finalText,
+                    $this->toolCalls,
+                    $this->apiCalls,
+                    $this->inputTokens,
+                    $this->outputTokens,
+                    $this->reasoningTokens
+                );
             }
 
             $toolCalls = $this->findToolCalls($response);
@@ -96,16 +106,15 @@ class Agent
 
     private function executeTool(array $toolCall): string
     {
-        echo sprintf(
-            "Tool call: %s %s\n",
-            $toolCall['name'],
-            $toolCall['arguments']
-        );
-
         $arguments = json_decode(
             $toolCall['arguments'],
             true
         );
+
+        $this->toolCalls[] = [
+            'name' => $toolCall['name'],
+            'arguments' => $arguments,
+        ];
 
         return match ($toolCall['name']) {
             'read_file' => $this->tool->readFile(
@@ -123,6 +132,8 @@ class Agent
                     $arguments['search']
                 )
             ),
+
+            'git_diff' => $this->tool->gitDiff(),
 
             default => throw new RuntimeException(
                 'Unknown tool: ' . $toolCall['name']
@@ -143,25 +154,5 @@ class Agent
             'previous_response_id' => $responseId,
             'input' => $toolOutputs,
         ];
-    }
-
-    private function collectUsage(array $response): void
-    {
-        $this->apiCalls++;
-        $this->inputTokens += $response["usage"]["input_tokens"] ?? 0;
-        $this->outputTokens += $response["usage"]["output_tokens"] ?? 0;
-        $this->reasoningTokens += $response["usage"]["output_tokens_details"]["reasoning_tokens"] ?? 0;
-    }
-
-    private function printMetrics(): void
-    {
-        $totalTokens = $this->inputTokens + $this->outputTokens;
-
-        echo "--- Run metrics ---\n";
-        echo "API calls: {$this->apiCalls}\n";
-        echo "Input tokens: {$this->inputTokens}\n";
-        echo "Output tokens: {$this->outputTokens}\n";
-        echo "Reasoning tokens: {$this->reasoningTokens}\n";
-        echo "Total tokens: {$totalTokens}\n";
     }
 }
