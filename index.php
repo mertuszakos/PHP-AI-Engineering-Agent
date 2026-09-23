@@ -7,9 +7,67 @@ if (!$apiKey) {
 }
 
 require_once __DIR__ . '/app/OpenAIClient.php';
+require_once __DIR__ . '/app/EmbeddingClient.php';
+require_once __DIR__ . '/app/VectorMath.php';
 require_once __DIR__ . '/app/Tool.php';
 require_once __DIR__ . '/app/Agent.php';
 require_once __DIR__ . '/app/RunResult.php';
+
+$embeddingClient = new EmbeddingClient($apiKey);
+
+$vectorA = $embeddingClient->embed(
+    'A user logs in with an email and password.'
+);
+
+$vectorB = $embeddingClient->embed(
+    'Validate the credentials of the user.'
+);
+
+$vectorC = $embeddingClient->embed(
+    'Calculate the total price of an invoice.'
+);
+
+
+echo 'Dimensions: ' . count($vectorA) . PHP_EOL;
+
+echo "First 5 values:\n";
+
+foreach (array_slice($vectorA, 0, 5) as $value) {
+    echo $value . PHP_EOL;
+}
+
+echo 'Dimensions: ' . count($vectorB) . PHP_EOL;
+
+echo "First 5 values:\n";
+
+foreach (array_slice($vectorB, 0, 5) as $value) {
+    echo $value . PHP_EOL;
+}
+
+echo 'Dimensions: ' . count($vectorC) . PHP_EOL;
+
+echo "First 5 values:\n";
+
+foreach (array_slice($vectorC, 0, 5) as $value) {
+    echo $value . PHP_EOL;
+}
+
+$vectorMath = new VectorMath();
+
+$similarityAB = $vectorMath->cosineSimilarity(
+    $vectorA,
+    $vectorB
+);
+
+$similarityAC = $vectorMath->cosineSimilarity(
+    $vectorA,
+    $vectorC
+);
+
+echo "A <-> B: {$similarityAB}" . PHP_EOL;
+echo "A <-> C: {$similarityAC}" . PHP_EOL;
+
+die();
 
 $client = new OpenAIClient($apiKey);
 $tool = new Tool();
