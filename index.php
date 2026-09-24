@@ -12,6 +12,55 @@ require_once __DIR__ . '/app/VectorMath.php';
 require_once __DIR__ . '/app/Tool.php';
 require_once __DIR__ . '/app/Agent.php';
 require_once __DIR__ . '/app/RunResult.php';
+require_once __DIR__ . '/app/SemanticSearch.php';
+
+$documents = [
+    [
+        'file' => 'AuthService.php',
+        'content' => '
+            public function validateCredentials(string $email, string $password): bool
+            {
+                return $this->passwordHasher->verify($email, $password);
+            }
+        ',
+    ],
+    [
+        'file' => 'InvoiceService.php',
+        'content' => '
+            public function calculateTotal(array $items): float
+            {
+                return array_sum(array_column($items, "price"));
+            }
+        ',
+    ],
+    [
+        'file' => 'MailService.php',
+        'content' => '
+            public function sendWelcomeEmail(User $user): void
+            {
+                $this->mailer->send($user->email, "Welcome!");
+            }
+        ',
+    ],
+];
+
+$embeddingClient = new EmbeddingClient($apiKey);
+$vectorMath = new VectorMath();
+
+$semanticSearch = new SemanticSearch(
+    $embeddingClient,
+    $vectorMath
+);
+
+$semanticSearch->index($documents);
+
+$results = $semanticSearch->search(
+    'Where is user authentication handled?'
+);
+
+print_r($results);
+
+die();
 
 $embeddingClient = new EmbeddingClient($apiKey);
 
