@@ -13,36 +13,15 @@ require_once __DIR__ . '/app/Tool.php';
 require_once __DIR__ . '/app/Agent.php';
 require_once __DIR__ . '/app/RunResult.php';
 require_once __DIR__ . '/app/SemanticSearch.php';
+require_once __DIR__ . '/app/RepositoryIndexer.php';
 
-$documents = [
-    [
-        'file' => 'AuthService.php',
-        'content' => '
-            public function validateCredentials(string $email, string $password): bool
-            {
-                return $this->passwordHasher->verify($email, $password);
-            }
-        ',
-    ],
-    [
-        'file' => 'InvoiceService.php',
-        'content' => '
-            public function calculateTotal(array $items): float
-            {
-                return array_sum(array_column($items, "price"));
-            }
-        ',
-    ],
-    [
-        'file' => 'MailService.php',
-        'content' => '
-            public function sendWelcomeEmail(User $user): void
-            {
-                $this->mailer->send($user->email, "Welcome!");
-            }
-        ',
-    ],
-];
+$repositoryIndexer = new RepositoryIndexer('/var/www/workspace');
+
+$documents = $repositoryIndexer->getDocuments();
+
+print_r($documents);
+
+die;
 
 $embeddingClient = new EmbeddingClient($apiKey);
 $vectorMath = new VectorMath();
