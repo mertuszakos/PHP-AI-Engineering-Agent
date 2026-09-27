@@ -14,14 +14,21 @@ require_once __DIR__ . '/app/Agent.php';
 require_once __DIR__ . '/app/RunResult.php';
 require_once __DIR__ . '/app/SemanticSearch.php';
 require_once __DIR__ . '/app/RepositoryIndexer.php';
+require_once __DIR__ . '/app/CodeChunker.php';
 
 $repositoryIndexer = new RepositoryIndexer('/var/www/workspace');
 
 $documents = $repositoryIndexer->getDocuments();
 
-print_r($documents);
+$chunker = new CodeChunker(
+    chunkSize: 5,
+    overlap: 2,
+);
 
-die;
+$chunks = $chunker->chunk($documents);
+
+print_r($chunks);
+die();
 
 $embeddingClient = new EmbeddingClient($apiKey);
 $vectorMath = new VectorMath();
