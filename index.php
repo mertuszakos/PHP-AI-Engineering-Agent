@@ -15,6 +15,31 @@ require_once __DIR__ . '/app/RunResult.php';
 require_once __DIR__ . '/app/SemanticSearch.php';
 require_once __DIR__ . '/app/RepositoryIndexer.php';
 require_once __DIR__ . '/app/CodeChunker.php';
+require_once __DIR__ . '/app/PhpTokenizer.php';
+require_once __DIR__ . '/app/PhpSymbolExtractor.php';
+
+$code = <<<'PHP'
+<?php
+
+class AuthService
+{
+    public function validateCredentials(string $email): bool
+    {
+        return true;
+    }
+}
+PHP;
+
+$tokenizer = new PhpTokenizer();
+$extractor = new PhpSymbolExtractor();
+
+$tokens = $tokenizer->tokenize($code);
+//print_r($tokens);die;
+$symbols = $extractor->extract($tokens);
+
+print_r($symbols);
+
+die();
 
 $repositoryIndexer = new RepositoryIndexer('/var/www/workspace');
 
