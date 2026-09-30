@@ -1,5 +1,7 @@
 <?php
 
+namespace App;
+
 class RunResult
 {
     public function __construct(

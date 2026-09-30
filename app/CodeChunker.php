@@ -1,5 +1,7 @@
 <?php
 
+namespace App;
+
 class CodeChunker
 {
     public function __construct(

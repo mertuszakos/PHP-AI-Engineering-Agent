@@ -1,5 +1,7 @@
 <?php
 
+namespace App;
+
 class VectorMath
 {
     public function cosineSimilarity(array $a, array $b): float

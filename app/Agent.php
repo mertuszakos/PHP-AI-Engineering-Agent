@@ -1,5 +1,7 @@
 <?php
 
+namespace App;
+
 class Agent
 {
     public function __construct(

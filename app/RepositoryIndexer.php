@@ -1,5 +1,7 @@
 <?php
 
+namespace App;
+
 class RepositoryIndexer
 {
     public function __construct(

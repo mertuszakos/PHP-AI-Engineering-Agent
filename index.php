@@ -1,157 +1,54 @@
 <?php
 
+require_once __DIR__ . '/vendor/autoload.php';
+
+use App\OpenAIClient;
+use App\EmbeddingClient;
+use App\VectorMath;
+use App\Tool;
+use App\Agent;
+use App\RunResult;
+use App\SemanticSearch;
+use App\RepositoryIndexer;
+use App\CodeChunker;
+use App\PhpAstParser;
+use App\PhpSemanticChunker;
+
 $apiKey = getenv('OPENAI_API_KEY');
 
 if (!$apiKey) {
     throw new RuntimeException('OPENAI_API_KEY nincs beállítva.');
 }
 
-require_once __DIR__ . '/app/OpenAIClient.php';
-require_once __DIR__ . '/app/EmbeddingClient.php';
-require_once __DIR__ . '/app/VectorMath.php';
-require_once __DIR__ . '/app/Tool.php';
-require_once __DIR__ . '/app/Agent.php';
-require_once __DIR__ . '/app/RunResult.php';
-require_once __DIR__ . '/app/SemanticSearch.php';
-require_once __DIR__ . '/app/RepositoryIndexer.php';
-require_once __DIR__ . '/app/CodeChunker.php';
-require_once __DIR__ . '/app/PhpTokenizer.php';
-require_once __DIR__ . '/app/PhpSymbolExtractor.php';
-
 $code = <<<'PHP'
 <?php
 
+function helper(): void
+{
+}
+
 class AuthService
 {
-    public function validateCredentials(string $email): bool
+    public function login(): void
     {
-        return true;
+    }
+
+    public function logout(): void
+    {
+    }
+}
+
+class UserService
+{
+    public function findUser(): void
+    {
     }
 }
 PHP;
 
-$tokenizer = new PhpTokenizer();
-$extractor = new PhpSymbolExtractor();
+$parser = new PhpAstParser();
+$chunker = new PhpSemanticChunker($parser);
 
-$tokens = $tokenizer->tokenize($code);
-//print_r($tokens);die;
-$symbols = $extractor->extract($tokens);
-
-print_r($symbols);
-
-die();
-
-$repositoryIndexer = new RepositoryIndexer('/var/www/workspace');
-
-$documents = $repositoryIndexer->getDocuments();
-
-$chunker = new CodeChunker(
-    chunkSize: 5,
-    overlap: 2,
-);
-
-$chunks = $chunker->chunk($documents);
+$chunks = $chunker->chunk($code);
 
 print_r($chunks);
-die();
-
-$embeddingClient = new EmbeddingClient($apiKey);
-$vectorMath = new VectorMath();
-
-$semanticSearch = new SemanticSearch(
-    $embeddingClient,
-    $vectorMath
-);
-
-$semanticSearch->index($documents);
-
-$results = $semanticSearch->search(
-    'Where is user authentication handled?'
-);
-
-print_r($results);
-
-die();
-
-$embeddingClient = new EmbeddingClient($apiKey);
-
-$vectorA = $embeddingClient->embed(
-    'A user logs in with an email and password.'
-);
-
-$vectorB = $embeddingClient->embed(
-    'Validate the credentials of the user.'
-);
-
-$vectorC = $embeddingClient->embed(
-    'Calculate the total price of an invoice.'
-);
-
-
-echo 'Dimensions: ' . count($vectorA) . PHP_EOL;
-
-echo "First 5 values:\n";
-
-foreach (array_slice($vectorA, 0, 5) as $value) {
-    echo $value . PHP_EOL;
-}
-
-echo 'Dimensions: ' . count($vectorB) . PHP_EOL;
-
-echo "First 5 values:\n";
-
-foreach (array_slice($vectorB, 0, 5) as $value) {
-    echo $value . PHP_EOL;
-}
-
-echo 'Dimensions: ' . count($vectorC) . PHP_EOL;
-
-echo "First 5 values:\n";
-
-foreach (array_slice($vectorC, 0, 5) as $value) {
-    echo $value . PHP_EOL;
-}
-
-$vectorMath = new VectorMath();
-
-$similarityAB = $vectorMath->cosineSimilarity(
-    $vectorA,
-    $vectorB
-);
-
-$similarityAC = $vectorMath->cosineSimilarity(
-    $vectorA,
-    $vectorC
-);
-
-echo "A <-> B: {$similarityAB}" . PHP_EOL;
-echo "A <-> C: {$similarityAC}" . PHP_EOL;
-
-die();
-
-$client = new OpenAIClient($apiKey);
-$tool = new Tool();
-$agent = new Agent($client, $tool);
-
-$result = $agent->run(
-    'Review the uncommitted changes in the workspace project. '
-    . 'Identify potential bugs, security issues, and code quality problems. '
-    . 'Keep the review concise.'
-);
-
-echo "Tool calls:\n";
-
-foreach ($result->toolCalls as $tool) {
-    $arguments = json_encode($tool["arguments"]);
-    echo "- {$tool["name"]} {$arguments}\n";
-}
-
-echo "--- Run metrics ---\n";
-echo "API calls: {$result->apiCalls}\n";
-echo "Input tokens: {$result->inputTokens}\n";
-echo "Output tokens: {$result->outputTokens}\n";
-echo "Reasoning tokens: {$result->reasoningTokens}\n";
-echo "Total tokens: {$result->getTotalTokens()}\n";
-
-echo "--- Result: ---\n";
-echo $result->answer;

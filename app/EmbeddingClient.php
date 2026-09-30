@@ -1,5 +1,7 @@
 <?php
 
+namespace App;
+
 class EmbeddingClient
 {
     public function __construct(private readonly string $apiKey) {}

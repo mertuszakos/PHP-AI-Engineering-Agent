@@ -1,5 +1,7 @@
 <?php
 
+namespace App;
+
 class OpenAIClient
 {
     public function __construct(private readonly string $apiKey) {}
