@@ -23,6 +23,8 @@ if (!$apiKey) {
 $code = <<<'PHP'
 <?php
 
+namespace App\Services;
+
 function helper(): void
 {
 }
@@ -30,17 +32,6 @@ function helper(): void
 class AuthService
 {
     public function login(): void
-    {
-    }
-
-    public function logout(): void
-    {
-    }
-}
-
-class UserService
-{
-    public function findUser(): void
     {
     }
 }
