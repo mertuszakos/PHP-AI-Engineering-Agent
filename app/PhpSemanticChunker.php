@@ -12,22 +12,95 @@ use PhpParser\NodeVisitorAbstract;
 
 class PhpSemanticChunker
 {
-    public function __construct(
-        private PhpAstParser $parser
-    ) {
-    }
+    public function __construct(private PhpAstParser $parser) {}
 
     public function chunk(string $code): array
     {
         $ast = $this->parser->parse($code);
 
-        $visitor = new class extends NodeVisitorAbstract
+        $visitor = new class($code) extends NodeVisitorAbstract
         {
+            private string $code;
+            private array $chunks = [];
+            private ?string $currentClass = null;
+
+            public function __construct(string $code)
+            {
+                $this->code = $code;
+            }
+
+            public function getChunks(): array
+            {
+                return $this->chunks;
+            }
+
             public function enterNode(Node $node)
             {
-                echo $node->getType() . PHP_EOL;
+                if ($node instanceof Class_) {
+                    $this->currentClass = $node->name->toString();
+                }
+
+                if ($node instanceof ClassMethod) {
+                    $this->addChunk(
+                        $node,
+                        'method',
+                        $this->currentClass . '::' .  $node->name->toString()
+                    );
+                }
+
+                if ($node instanceof Function_) {
+                    $this->addChunk(
+                        $node,
+                        'function',
+                        $node->name->toString()
+                    );
+                }
 
                 return null;
+            }
+
+            public function leaveNode(Node $node)
+            {
+                if ($node instanceof Class_) {
+                    $this->currentClass = null;
+                }
+            }
+
+            private function addChunk(
+                Node $node,
+                string $type,
+                string $symbol
+            ): void {
+                $startLine = $node->getStartLine();
+                $endLine = $node->getEndLine();
+                $result = $this->extractSource(
+                    $this->code,
+                    $startLine,
+                    $endLine
+                );
+
+                $this->chunks[] = [
+                    'type' => $type,
+                    'symbol' => $symbol,
+                    'start_line' => $startLine,
+                    'end_line' => $endLine,
+                    'content' => $result,
+                ];
+            }
+
+            private function extractSource(
+                string $code,
+                int $startLine,
+                int $endLine
+            ): string {
+                $lines = preg_split('/\R/', $code);
+                $selectedLines = array_slice(
+                    $lines,
+                    $startLine - 1,
+                    $endLine - $startLine + 1
+                );
+
+                return implode("\n", $selectedLines);
             }
         };
 
@@ -37,69 +110,6 @@ class PhpSemanticChunker
 
         $traverser->traverse($ast);
 
-die;
-
-        $chunk = [];
-
-        foreach ($ast as $node) {
-            if ($node instanceof Class_) {
-                foreach ($node->stmts as $stmt) {
-                    if ($stmt instanceof ClassMethod) {
-                        $startLine = $stmt->getStartLine();
-                        $endLine = $stmt->getEndLine();
-
-                        $result = $this->extractSource(
-                            $code,
-                            $startLine,
-                            $endLine
-                        );
-
-                        $chunk[] = [
-                            'type' => 'method',
-                            'symbol' => $node->name->toString() . '::' . $stmt->name->toString(),
-                            'start_line' => $startLine,
-                            'end_line' => $endLine,
-                            'content' => $result,
-                        ];
-                    }
-                }
-            }
-
-            if ($node instanceof Function_) {
-                $startLine = $node->getStartLine();
-                $endLine = $node->getEndLine();
-
-                $result = $this->extractSource(
-                    $code,
-                    $startLine,
-                    $endLine
-                );
-
-                $chunk[] = [
-                    'type' => 'function',
-                    'symbol' => $node->name->toString(),
-                    'start_line' => $startLine,
-                    'end_line' => $endLine,
-                    'content' => $result,
-                ];
-            }
-        }
-
-        return $chunk;
-    }
-
-    private function extractSource(
-        string $code,
-        int $startLine,
-        int $endLine
-    ): string {
-        $lines = preg_split('/\R/', $code);
-        $selectedLines = array_slice(
-            $lines,
-            $startLine - 1,
-            $endLine - $startLine + 1
-        );
-
-        return implode("\n", $selectedLines);
+        return $visitor->getChunks();
     }
 }
