@@ -14,32 +14,30 @@ use App\CodeChunker;
 use App\PhpAstParser;
 use App\PhpSemanticChunker;
 
+use App\RepositorySemanticIndexer;
+
 $apiKey = getenv('OPENAI_API_KEY');
 
 if (!$apiKey) {
     throw new RuntimeException('OPENAI_API_KEY nincs beállítva.');
 }
 
-$code = <<<'PHP'
-<?php
-
-namespace App\Services;
-
-function helper(): void
-{
-}
-
-class AuthService
-{
-    public function login(): void
-    {
-    }
-}
-PHP;
-
+$indexer = new RepositoryIndexer("workspace");
 $parser = new PhpAstParser();
 $chunker = new PhpSemanticChunker($parser);
+$response = new RepositorySemanticIndexer($indexer, $chunker);
+$chunk = $response->index();
 
-$chunks = $chunker->chunk($code);
+$embeddingClient = new EmbeddingClient($apiKey);
+$vectorMath = new VectorMath();
 
-print_r($chunks);
+$semanticSearch = new SemanticSearch(
+    $embeddingClient,
+    $vectorMath
+);
+
+$semanticSearch->index($chunk);
+
+$results = $semanticSearch->search('process customer payment');
+
+print_r($results);

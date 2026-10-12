@@ -9,15 +9,22 @@ class SemanticSearch
     public function __construct(
         private readonly EmbeddingClient $embeddingClient,
         private readonly VectorMath $vectorMath,
-        ) {}
+    ) {}
 
-    public function index(array $documents): void
+    public function index(array $chunks): void
     {
-        foreach ($documents as $document) {
+        foreach ($chunks as $chunk) {
+            $embeddingText = sprintf(
+                "File: %s\nSymbol: %s\nType: %s\n\n%s",
+                $chunk['file'],
+                $chunk['symbol'],
+                $chunk['type'],
+                $chunk['content']
+            );
+
             $this->index[] = [
-                'file' => $document['file'],
-                'content' => $document['content'],
-                'vector' => $this->embeddingClient->embed($document['content']),
+                ...$chunk,
+                'vector' => $this->embeddingClient->embed($embeddingText),
             ];
         }
     }
@@ -29,13 +36,17 @@ class SemanticSearch
         $result = [];
 
         foreach ($this->index as $value) {
-            $result[] = [
-                'file' => $value['file'],
+            $record = [
+                ...$value,
                 'similarity' => $this->vectorMath->cosineSimilarity(
                     $queryVector,
                     $value['vector']
                 ),
             ];
+
+            unset($record['vector']);
+
+            $result[] = $record;
         }
 
         usort($result, function ($a, $b) {

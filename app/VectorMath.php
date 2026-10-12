@@ -7,7 +7,7 @@ class VectorMath
     public function cosineSimilarity(array $a, array $b): float
     {
         if (count($a) !== count($b)) {
-            throw new RuntimeException('Different dimensions');
+            throw new \RuntimeException('Different dimensions');
         }
 
         $dotProduct = $magnitudeA = $magnitudeB = 0;

@@ -26,7 +26,7 @@ class EmbeddingClient
         $response = curl_exec($ch);
 
         if ($response === false) {
-            throw new RuntimeException(curl_error($ch));
+            throw new \RuntimeException(curl_error($ch));
         }
 
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -36,7 +36,7 @@ class EmbeddingClient
         $data = json_decode($response, true);
 
         if ($httpCode !== 200) {
-            throw new RuntimeException(
+            throw new \RuntimeException(
                 'OpenAI API error: ' . $response
             );
         }
