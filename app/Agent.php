@@ -4,13 +4,14 @@ namespace App;
 
 class Agent
 {
+    private const MAX_ITERATIONS = 10;
+
     public function __construct(
         private readonly OpenAIClient $client,
         private readonly Tool $tool
-    ) {
-    }
+    ) {}
 
-    private $payload;
+    private array $payload;
 
     private int $apiCalls = 0;
     private int $inputTokens = 0;
@@ -21,15 +22,49 @@ class Agent
 
     public function run(string $task): RunResult
     {
+        $this->resetState();
         $this->createInitialPayload($task);
 
+        $iteration = 0;
+
         while (true) {
+            if ($iteration >= self::MAX_ITERATIONS) {
+                throw new \RuntimeException(
+                    'Agent reached the maximum number of iterations: ' . self::MAX_ITERATIONS
+                );
+            }
+
             $response = $this->client->createResponse($this->payload);
 
             $this->apiCalls++;
             $this->inputTokens += $response["usage"]["input_tokens"] ?? 0;
             $this->outputTokens += $response["usage"]["output_tokens"] ?? 0;
             $this->reasoningTokens += $response["usage"]["output_tokens_details"]["reasoning_tokens"] ?? 0;
+
+            $toolCalls = $this->findToolCalls($response);
+
+            if (!empty($toolCalls)) {
+                $toolOutputs = [];
+
+                foreach ($toolCalls as $toolCall) {
+                    $toolResult = $this->executeTool($toolCall);
+
+                    $toolOutputs[] = [
+                        'type' => 'function_call_output',
+                        'call_id' => $toolCall['call_id'],
+                        'output' => $toolResult,
+                    ];
+                }
+
+                $this->createToolResultPayload(
+                    $response['id'],
+                    $toolOutputs
+                );
+
+                $iteration++;
+
+                continue;
+            }
 
             $finalText = $this->findFinalText($response);
 
@@ -44,24 +79,7 @@ class Agent
                 );
             }
 
-            $toolCalls = $this->findToolCalls($response);
-
-            $toolOutputs = [];
-
-            foreach ($toolCalls as $toolCall) {
-                $toolResult = $this->executeTool($toolCall);
-
-                $toolOutputs[] = [
-                    'type' => 'function_call_output',
-                    'call_id' => $toolCall['call_id'],
-                    'output' => $toolResult,
-                ];
-            }
-
-            $this->createToolResultPayload(
-                $response['id'],
-                $toolOutputs
-            );
+            throw new \RuntimeException('No answer.');
         }
     }
 
@@ -108,10 +126,24 @@ class Agent
 
     private function executeTool(array $toolCall): string
     {
-        $arguments = json_decode(
-            $toolCall['arguments'],
-            true
-        );
+        try {
+            $arguments = json_decode(
+                $toolCall['arguments'],
+                true,
+                512,
+                JSON_THROW_ON_ERROR
+            );
+
+            if (!is_array($arguments) || (array_is_list($arguments) && !empty($arguments))) {
+                return json_encode([
+                    'error' => 'Invalid tool arguments: Expected a JSON object.'
+                ]);
+            }
+        } catch (\JsonException $e) {
+            return json_encode([
+                'error' => 'Invalid tool arguments JSON: ' . $e->getMessage()
+            ]);
+        }
 
         $this->toolCalls[] = [
             'name' => $toolCall['name'],
@@ -119,34 +151,56 @@ class Agent
         ];
 
         return match ($toolCall['name']) {
-            'read_file' => $this->tool->readFile(
-                $arguments['path']
-            ),
+            'read_file' => (function() use ($arguments) {
+                $path = $arguments['path'] ?? null;
+                if (!is_string($path) || trim($path) === '') {
+                    return json_encode([
+                        'error' => 'Missing or invalid argument: path'
+                    ]);
+                }
+                return $this->tool->readFile($path);
+            })(),
 
-            'list_files' => json_encode(
-                $this->tool->listFiles(
-                    $arguments['directory']
-                )
-            ),
+            'list_files' => (function() use ($arguments) {
+                $dir = $arguments['directory'] ?? null;
+                if (!is_string($dir) || trim($dir) === '') {
+                    return json_encode([
+                        'error' => 'Missing or invalid argument: directory'
+                    ]);
+                }
+                return json_encode($this->tool->listFiles($dir));
+            })(),
 
-            'search_code' => json_encode(
-                $this->tool->searchCode(
-                    $arguments['search']
-                )
-            ),
+            'search_code' => (function() use ($arguments) {
+                $search = $arguments['search'] ?? null;
+                if (!is_string($search) || trim($search) === '') {
+                    return json_encode([
+                        'error' => 'Missing or invalid argument: search'
+                    ]);
+                }
+                return json_encode($this->tool->searchCode($search));
+            })(),
 
             'git_diff' => $this->tool->gitDiff(),
 
-            default => throw new RuntimeException(
+            'semantic_search' => (function() use ($arguments) {
+                $query = $arguments['query'] ?? null;
+                if (!is_string($query) || trim($query) === '') {
+                    return json_encode([
+                        'error' => 'Missing or invalid argument: query'
+                    ]);
+                }
+                return json_encode($this->tool->semanticSearch($query));
+            })(),
+
+            default => throw new \RuntimeException(
                 'Unknown tool: ' . $toolCall['name']
             ),
         };
     }
 
-    private function createToolResultPayload(
-        string $responseId,
-        array $toolOutputs
-    ): void {
+    private function createToolResultPayload(string $responseId, array $toolOutputs): void
+    {
         $this->payload = [
             'model' => 'gpt-5.6',
             'reasoning' => [
@@ -156,5 +210,15 @@ class Agent
             'previous_response_id' => $responseId,
             'input' => $toolOutputs,
         ];
+    }
+
+    private function resetState(): void
+    {
+        $this->apiCalls = 0;
+        $this->inputTokens = 0;
+        $this->outputTokens = 0;
+        $this->reasoningTokens = 0;
+
+        $this->toolCalls = [];
     }
 }

@@ -6,7 +6,7 @@ class EmbeddingClient
 {
     public function __construct(private readonly string $apiKey) {}
 
-    public function embed(string $text): ?array
+    public function embed(string $text): array
     {
         $ch = curl_init('https://api.openai.com/v1/embeddings');
 
@@ -21,6 +21,8 @@ class EmbeddingClient
                 "input" => $text,
                 "model" => "text-embedding-3-small"
             ]),
+            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_TIMEOUT => 60,
         ]);
 
         $response = curl_exec($ch);
@@ -41,6 +43,28 @@ class EmbeddingClient
             );
         }
 
-        return $data['data'][0]['embedding'] ?? null;
+        $answer = $data['data'][0]['embedding'] ?? null;
+
+        if (!is_array($answer) || empty($answer)) {
+            throw new \RuntimeException(
+                'Embedding API returned an invalid vector.'
+            );
+        }
+
+        foreach ($answer as $value) {
+            if (!is_int($value) && !is_float($value)) {
+                throw new \RuntimeException(
+                    'Embedding vector contains non-numeric values.'
+                );
+            }
+
+            if (!is_finite((float) $value)) {
+                throw new \RuntimeException(
+                    'Embedding vector contains non-finite values.'
+                );
+            }
+        }
+
+        return $answer;
     }
 }

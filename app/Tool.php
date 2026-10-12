@@ -72,7 +72,26 @@ class Tool
                 'additionalProperties' => false,
             ],
         ],
+        [
+            'type' => 'function',
+            'name' => 'semantic_search',
+            'description' => 'Semantic search among the repository\'s PHP methods',
+            'parameters' => [
+                'type' => 'object',
+                'properties' => [
+                    'query' => [
+                        'type' => 'string',
+                        'description' => 'Natural language query describing the code functionality to find.',
+                    ],
+                ],
+                'required' => ['query'],
+                'additionalProperties' => false,
+            ],
+            'strict' => true,
+        ],
     ];
+
+    public function __construct(private readonly SemanticSearch $semanticSearch) {}
 
     public function readFile(string $path): string
     {
@@ -81,7 +100,7 @@ class Tool
         $file = file_get_contents($path);
 
         if ($file === false) {
-            throw new RuntimeException('File not found');
+            throw new \RuntimeException('File not found');
         }
 
         return $file;
@@ -102,8 +121,8 @@ class Tool
         $baseDir = $this->resolvePath('.');
         $results = [];
 
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($baseDir, FilesystemIterator::SKIP_DOTS)
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($baseDir, \FilesystemIterator::SKIP_DOTS)
         );
 
         foreach ($iterator as $file) {
@@ -125,12 +144,22 @@ class Tool
         return $results;
     }
 
+    public function gitDiff(): string
+    {
+        return shell_exec('git -C /var/www/workspace diff');
+    }
+
+    public function semanticSearch(string $query): array
+    {
+        return array_slice($this->semanticSearch->search($query), 0, 3);
+    }
+
     private function resolvePath(string $path): string
     {
         $base = realpath('/var/www/workspace');
 
         if ($base === false) {
-            throw new RuntimeException('Workspace not found');
+            throw new \RuntimeException('Workspace not found');
         }
 
         $path = ltrim($path, '/');
@@ -139,20 +168,16 @@ class Tool
 
         $resolved = realpath($full);
         if ($resolved === false) {
-            throw new RuntimeException('DENIED');
+            throw new \RuntimeException('DENIED');
         }
 
         if (
             $resolved !== $base &&
             !str_starts_with($resolved, $base . DIRECTORY_SEPARATOR)
         ) {
-            throw new RuntimeException('DENIED');
+            throw new \RuntimeException('DENIED');
         }
 
         return $resolved;
-    }
-    public function gitDiff(): string
-    {
-        return shell_exec('git -C /var/www/workspace diff');
     }
 }

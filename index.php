@@ -38,6 +38,16 @@ $semanticSearch = new SemanticSearch(
 
 $semanticSearch->index($chunk);
 
-$results = $semanticSearch->search('process customer payment');
+$client = new OpenAIClient($apiKey);
+$tools = new Tool($semanticSearch);
+$agent = new Agent($client, $tools);
 
-print_r($results);
+$result = $agent->run(
+    'Find the method responsible for user authentication. ' .
+    'Explain any security problems in its implementation. ' .
+    'Use semantic_search to locate the relevant code. ' .
+    'Include the file name and line numbers in your answer.'
+);
+
+echo $result->answer;
+print_r($result->toolCalls);
