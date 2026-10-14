@@ -1,11 +1,11 @@
 <?php
 
-namespace App;
+namespace App\Indexing;
 
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor\NameResolver;
 
-use App\PhpSemanticChunkVisitor;
+use App\Parsing\PhpAstParser;
 
 class PhpSemanticChunker
 {

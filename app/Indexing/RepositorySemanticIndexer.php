@@ -1,6 +1,6 @@
 <?php
 
-namespace App;
+namespace App\Indexing;
 
 class RepositorySemanticIndexer
 {

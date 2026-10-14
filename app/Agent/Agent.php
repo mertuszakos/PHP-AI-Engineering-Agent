@@ -1,6 +1,9 @@
 <?php
 
-namespace App;
+namespace App\Agent;
+
+use App\LLM\OpenAIClient;
+use App\Tools\Tool;
 
 class Agent
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace App;
+namespace App\Indexing;
 
 use PhpParser\NodeVisitorAbstract;
 use PhpParser\Node\Stmt\ClassMethod;

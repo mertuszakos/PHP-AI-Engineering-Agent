@@ -13,7 +13,7 @@ class CodeChunker
             $this->overlap < 0 ||
             $this->overlap >= $this->chunkSize
         ) {
-            throw new InvalidArgumentException('Invalid chunk configuration.');
+            throw new \InvalidArgumentException('Invalid chunk configuration.');
         }
     }
 

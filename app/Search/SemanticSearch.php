@@ -1,6 +1,8 @@
 <?php
 
-namespace App;
+namespace App\Search;
+
+use App\LLM\EmbeddingClient;
 
 class SemanticSearch
 {

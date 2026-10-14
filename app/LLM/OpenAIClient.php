@@ -1,6 +1,6 @@
 <?php
 
-namespace App;
+namespace App\LLM;
 
 class OpenAIClient
 {
@@ -18,6 +18,8 @@ class OpenAIClient
                 'Content-Type: application/json',
             ],
             CURLOPT_POSTFIELDS => json_encode($payload),
+            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_TIMEOUT => 60,
         ]);
 
         $response = curl_exec($ch);

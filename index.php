@@ -2,19 +2,18 @@
 
 require_once __DIR__ . '/vendor/autoload.php';
 
-use App\OpenAIClient;
-use App\EmbeddingClient;
-use App\VectorMath;
-use App\Tool;
-use App\Agent;
-use App\RunResult;
-use App\SemanticSearch;
-use App\RepositoryIndexer;
+use App\LLM\OpenAIClient;
+use App\LLM\EmbeddingClient;
+use App\Search\VectorMath;
+use App\Search\SemanticSearch;
+use App\Tools\Tool;
+use App\Agent\Agent;
+use App\Agent\RunResult;
+use App\Indexing\RepositoryIndexer;
+use App\Indexing\RepositorySemanticIndexer;
+use App\Indexing\PhpSemanticChunker;
 use App\CodeChunker;
-use App\PhpAstParser;
-use App\PhpSemanticChunker;
-
-use App\RepositorySemanticIndexer;
+use App\Parsing\PhpAstParser;
 
 $apiKey = getenv('OPENAI_API_KEY');
 

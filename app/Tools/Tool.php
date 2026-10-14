@@ -1,6 +1,8 @@
 <?php
 
-namespace App;
+namespace App\Tools;
+
+use App\Search\SemanticSearch;
 
 class Tool
 {
