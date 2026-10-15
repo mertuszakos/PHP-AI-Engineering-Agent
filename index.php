@@ -8,11 +8,9 @@ use App\Search\VectorMath;
 use App\Search\SemanticSearch;
 use App\Tools\Tool;
 use App\Agent\Agent;
-use App\Agent\RunResult;
 use App\Indexing\RepositoryIndexer;
 use App\Indexing\RepositorySemanticIndexer;
 use App\Indexing\PhpSemanticChunker;
-use App\CodeChunker;
 use App\Parsing\PhpAstParser;
 
 $apiKey = getenv('OPENAI_API_KEY');
