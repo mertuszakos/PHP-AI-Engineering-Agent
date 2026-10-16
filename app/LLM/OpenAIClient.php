@@ -2,7 +2,7 @@
 
 namespace App\LLM;
 
-class OpenAIClient
+class OpenAIClient implements LLMProviderInterface
 {
     public function __construct(private readonly string $apiKey) {}
 

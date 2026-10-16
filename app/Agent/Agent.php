@@ -2,7 +2,7 @@
 
 namespace App\Agent;
 
-use App\LLM\OpenAIClient;
+use App\LLM\LLMProviderInterface;
 use App\Tools\Tool;
 
 class Agent
@@ -10,7 +10,7 @@ class Agent
     private const MAX_ITERATIONS = 10;
 
     public function __construct(
-        private readonly OpenAIClient $client,
+        private readonly LLMProviderInterface $client,
         private readonly Tool $tool
     ) {}
 
