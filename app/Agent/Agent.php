@@ -2,7 +2,7 @@
 
 namespace App\Agent;
 
-use App\LLM\LLMProviderInterface;
+use App\LLM\ConversationProviderInterface;
 use App\Tools\Tool;
 
 class Agent
@@ -10,11 +10,9 @@ class Agent
     private const MAX_ITERATIONS = 10;
 
     public function __construct(
-        private readonly LLMProviderInterface $client,
+        private readonly ConversationProviderInterface $provider,
         private readonly Tool $tool
     ) {}
-
-    private array $payload;
 
     private int $apiCalls = 0;
     private int $inputTokens = 0;
@@ -26,25 +24,21 @@ class Agent
     public function run(string $task): RunResult
     {
         $this->resetState();
-        $this->createInitialPayload($task);
 
-        $iteration = 0;
+        $iteration = 1;
+
+        $response = $this->provider->startConversation(
+            $task,
+            $this->tool->toolsList
+        );
 
         while (true) {
-            if ($iteration >= self::MAX_ITERATIONS) {
-                throw new \RuntimeException(
-                    'Agent reached the maximum number of iterations: ' . self::MAX_ITERATIONS
-                );
-            }
-
-            $response = $this->client->createResponse($this->payload);
-
             $this->apiCalls++;
-            $this->inputTokens += $response["usage"]["input_tokens"] ?? 0;
-            $this->outputTokens += $response["usage"]["output_tokens"] ?? 0;
-            $this->reasoningTokens += $response["usage"]["output_tokens_details"]["reasoning_tokens"] ?? 0;
+            $this->inputTokens += $response->inputTokens;
+            $this->outputTokens += $response->outputTokens;
+            $this->reasoningTokens += $response->reasoningTokens;
 
-            $toolCalls = $this->findToolCalls($response);
+            $toolCalls = $response->toolCalls;
 
             if (!empty($toolCalls)) {
                 $toolOutputs = [];
@@ -59,17 +53,20 @@ class Agent
                     ];
                 }
 
-                $this->createToolResultPayload(
-                    $response['id'],
-                    $toolOutputs
-                );
+                if ($iteration >= self::MAX_ITERATIONS) {
+                    throw new \RuntimeException(
+                        'Agent reached the maximum number of iterations: ' . self::MAX_ITERATIONS
+                    );
+                }
+
+                $response = $this->provider->continueConversation($toolOutputs);
 
                 $iteration++;
 
                 continue;
             }
 
-            $finalText = $this->findFinalText($response);
+            $finalText = $response->text;
 
             if ($finalText !== null) {
                 return new RunResult(
@@ -84,47 +81,6 @@ class Agent
 
             throw new \RuntimeException('No answer.');
         }
-    }
-
-    private function createInitialPayload(string $task): void
-    {
-        $this->payload = [
-            'model' => 'gpt-5.6',
-            'reasoning' => [
-                'effort' => 'low',
-            ],
-            'tools' => $this->tool->toolsList,
-            'tool_choice' => 'auto',
-            'input' => $task,
-        ];
-    }
-
-    private function findFinalText(array $data): ?string
-    {
-        foreach ($data['output'] ?? [] as $item) {
-            if (($item['type'] ?? null) === 'message') {
-                foreach ($item['content'] ?? [] as $content) {
-                    if (($content['type'] ?? null) === 'output_text') {
-                        return $content['text'];
-                    }
-                }
-            }
-        }
-
-        return null;
-    }
-
-    private function findToolCalls(array $data): array
-    {
-        $toolCalls = [];
-
-        foreach ($data['output'] ?? [] as $item) {
-            if (($item['type'] ?? null) === 'function_call') {
-                $toolCalls[] = $item;
-            }
-        }
-
-        return $toolCalls;
     }
 
     private function executeTool(array $toolCall): string
@@ -200,19 +156,6 @@ class Agent
                 'Unknown tool: ' . $toolCall['name']
             ),
         };
-    }
-
-    private function createToolResultPayload(string $responseId, array $toolOutputs): void
-    {
-        $this->payload = [
-            'model' => 'gpt-5.6',
-            'reasoning' => [
-                'effort' => 'low',
-            ],
-            'tools' => $this->tool->toolsList,
-            'previous_response_id' => $responseId,
-            'input' => $toolOutputs,
-        ];
     }
 
     private function resetState(): void

@@ -4,6 +4,8 @@ require_once __DIR__ . '/vendor/autoload.php';
 
 use App\LLM\OpenAIClient;
 use App\LLM\EmbeddingClient;
+use App\LLM\OpenAIProvider;
+use App\LLM\OpenAIResponseMapper;
 use App\Search\VectorMath;
 use App\Search\SemanticSearch;
 use App\Tools\Tool;
@@ -36,8 +38,12 @@ $semanticSearch = new SemanticSearch(
 $semanticSearch->index($chunk);
 
 $client = new OpenAIClient($apiKey);
+
+$mapper = new OpenAIResponseMapper();
+$provider = new OpenAIProvider($client, $mapper);
+
 $tools = new Tool($semanticSearch);
-$agent = new Agent($client, $tools);
+$agent = new Agent($provider, $tools);
 
 $result = $agent->run(
     'Find the method responsible for user authentication. ' .
