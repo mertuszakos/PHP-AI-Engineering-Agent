@@ -3,6 +3,7 @@
 require_once __DIR__ . '/vendor/autoload.php';
 
 use App\LLM\OpenAIClient;
+use App\LLM\OllamaClient;
 use App\LLM\EmbeddingClient;
 use App\LLM\OpenAIProvider;
 use App\LLM\OpenAIResponseMapper;
@@ -14,6 +15,26 @@ use App\Indexing\RepositoryIndexer;
 use App\Indexing\RepositorySemanticIndexer;
 use App\Indexing\PhpSemanticChunker;
 use App\Parsing\PhpAstParser;
+
+$client = new OllamaClient(
+    'http://host.docker.internal:11434'
+);
+
+$response = $client->chat([
+    'model' => 'qwen3.5:9b',
+    'messages' => [
+        [
+            'role' => 'user',
+            'content' => 'What is PHP?',
+        ],
+    ],
+    'stream' => false,
+    'think' => false,
+]);
+
+echo $response['message']['content'] ?? 'No response';
+
+die();
 
 $apiKey = getenv('OPENAI_API_KEY');
 
@@ -47,9 +68,9 @@ $agent = new Agent($provider, $tools);
 
 $result = $agent->run(
     'Find the method responsible for user authentication. ' .
-    'Explain any security problems in its implementation. ' .
-    'Use semantic_search to locate the relevant code. ' .
-    'Include the file name and line numbers in your answer.'
+        'Explain any security problems in its implementation. ' .
+        'Use semantic_search to locate the relevant code. ' .
+        'Include the file name and line numbers in your answer.'
 );
 
 echo $result->answer;

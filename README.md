@@ -6,4 +6,5 @@ docker compose build
 docker compose run --rm php php index.php
 
 docker compose run --rm php ./vendor/bin/phpunit tests
+docker compose run --rm php ./vendor/bin/phpunit --testdox --colors=always tests
 ```
