@@ -100,10 +100,12 @@ class OpenAIProviderTest extends TestCase
             ],
         ];
 
-        $openAIProvider->continueConversation($toolResults);
+        $result = $openAIProvider->continueConversation($toolResults);
 
         $secondPayload = $capturedPayloads[1];
 
+        $this->assertInstanceOf(LLMResponse::class, $result);
+        $this->assertNull($result->text);
         $this->assertSame('resp_123', $secondPayload['previous_response_id']);
         $this->assertSame($toolResults, $secondPayload['input']);
         $this->assertSame($this->tools, $secondPayload['tools']);
