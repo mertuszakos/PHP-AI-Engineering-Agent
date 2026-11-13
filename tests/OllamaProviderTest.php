@@ -1,10 +1,10 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
-use App\LLM\OllamaClient;
-use App\LLM\OllamaProvider;
-use App\LLM\OllamaResponseMapper;
-use App\LLM\LLMResponse;
+use App\LLM\Ollama\OllamaClient;
+use App\LLM\Ollama\OllamaProvider;
+use App\LLM\Ollama\OllamaResponseMapper;
+use App\LLM\DTO\LLMResponse;
 
 class OllamaProviderTest extends TestCase
 {

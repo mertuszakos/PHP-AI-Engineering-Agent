@@ -44,7 +44,21 @@ class Agent
                 $toolOutputs = [];
 
                 foreach ($toolCalls as $toolCall) {
-                    $toolResult = $this->executeTool($toolCall);
+                    echo sprintf(
+                        "[TOOL] %s %s\n",
+                        $toolCall['name'],
+                        $toolCall['arguments']
+                    );
+
+                    $toolResult = null;
+                    try {
+                        $toolResult = $this->executeTool($toolCall);
+                    } catch (\Throwable $e) {
+                        $toolResult = json_encode([
+                            'error' => 'Tool execution failed',
+                            'message' => $e->getMessage()
+                        ]);
+                    }
 
                     $toolOutputs[] = [
                         'type' => 'function_call_output',

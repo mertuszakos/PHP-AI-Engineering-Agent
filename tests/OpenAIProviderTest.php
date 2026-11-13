@@ -1,10 +1,10 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
-use App\LLM\OpenAIProvider;
-use App\LLM\OpenAIClient;
-use App\LLM\OpenAIResponseMapper;
-use App\LLM\LLMResponse;
+use App\LLM\OpenAI\OpenAIProvider;
+use App\LLM\OpenAI\OpenAIClient;
+use App\LLM\OpenAI\OpenAIResponseMapper;
+use App\LLM\DTO\LLMResponse;
 
 class OpenAIProviderTest extends TestCase
 {

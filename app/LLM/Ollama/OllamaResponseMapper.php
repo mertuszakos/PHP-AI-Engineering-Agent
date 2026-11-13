@@ -1,6 +1,8 @@
 <?php
 
-namespace App\LLM;
+namespace App\LLM\Ollama;
+
+use App\LLM\DTO\LLMResponse;
 
 class OllamaResponseMapper
 {

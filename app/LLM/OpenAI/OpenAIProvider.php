@@ -1,6 +1,9 @@
 <?php
 
-namespace App\LLM;
+namespace App\LLM\OpenAI;
+
+use App\LLM\Contracts\ConversationProviderInterface;
+use App\LLM\DTO\LLMResponse;
 
 class OpenAIProvider implements ConversationProviderInterface
 {

@@ -1,6 +1,8 @@
 <?php
 
-namespace App\LLM;
+namespace App\LLM\Contracts;
+
+use App\LLM\DTO\LLMResponse;
 
 interface ConversationProviderInterface
 {

@@ -1,7 +1,7 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
-use App\LLM\OllamaResponseMapper;
+use App\LLM\Ollama\OllamaResponseMapper;
 
 class OllamaResponseMapperTest extends TestCase
 {

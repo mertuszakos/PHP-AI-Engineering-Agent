@@ -1,6 +1,6 @@
 <?php
 
-namespace App\LLM;
+namespace App\LLM\DTO;
 
 class LLMResponse
 {

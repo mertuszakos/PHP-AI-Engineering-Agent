@@ -170,14 +170,14 @@ class Tool
 
         $resolved = realpath($full);
         if ($resolved === false) {
-            throw new \RuntimeException('DENIED');
+            throw new \RuntimeException('Requested file does not exist');
         }
 
         if (
             $resolved !== $base &&
             !str_starts_with($resolved, $base . DIRECTORY_SEPARATOR)
         ) {
-            throw new \RuntimeException('DENIED');
+            throw new \RuntimeException('Requested file access is denied');
         }
 
         return $resolved;

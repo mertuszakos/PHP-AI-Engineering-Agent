@@ -1,6 +1,8 @@
 <?php
 
-namespace App\LLM;
+namespace App\LLM\OpenAI;
+
+use App\LLM\DTO\LLMResponse;
 
 class OpenAIResponseMapper
 {

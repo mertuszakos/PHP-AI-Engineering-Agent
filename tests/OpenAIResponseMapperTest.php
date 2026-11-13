@@ -1,7 +1,7 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
-use App\LLM\OpenAIResponseMapper;
+use App\LLM\OpenAI\OpenAIResponseMapper;
 
 class OpenAIResponseMapperTest extends TestCase
 {
